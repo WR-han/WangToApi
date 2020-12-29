@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>测试JSZIP</title>
+</head>
+
+<body>
+  <h3>Choose the local(s) zip file(s)</h3>
+  <p class="note">Note : your browser will process the zip file, don't choose a file too big !</p>
+  <input type="file" id="file" name="file" multiple /><br />
+
+  <div id="result_block" class="hidden">
+    <h3>Content :</h3>
+    <div id="result"></div>
+  </div>
+</body>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.5.0/jszip.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/cropperjs/1.5.9/cropper.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.js"></script>
+<script type="text/javascript">
+  var $result = $("#result");
+
+  function blobToFile(Blob, fileName) {
+    Blob.lastModifiedDate = new Date();
+    Blob.name = fileName;
+    return Blob;
+  }
+
+  let file_list = []
+  // let my_files = null
+  $("#file").on("change", function (evt) {
+
+    // console.log(evt);
+
+    // remove content
+    $result.html("");
+    // be sure to show the results
+    $("#result_block").removeClass("hidden").addClass("show");
+
+    // Closure to capture the file information.
+    function handleFile(f) {
+
+      // console.log(f);
+
+      // var $title = $("<h4>", {
+      //   text: f.name
+      // });
+
+      // console.log($title);
+
+      // var $fileContent = $("<ul>");
+      // $result.append($title);
+      // $result.append($fileContent);
+
+      // var dateBefore = new Date();
+      JSZip.loadAsync(f) // 1) read the Blob
+        .then(function (zip) {
+            // my_files = zip
+
+            // ---------- 文件总列表 （筛出目录 以/结尾）
+            let file_name_list = Object.keys(zip.files).filter((name) => {
+              return name.charAt(name.length - 1) != "/"
+            })
+
+            // console.log(file_name_list)
+
+            // ---------- 文件总数
+            let all_file_num = file_name_list.length
+
+            // console.log(file_name_list)
+
+            // ---------- 初始解压数
+            let is_zip = 1
+
+            // console.log(zip["files"]);
+            // var dateAfter = new Date();
+            // $title.append($("<span>", {
+            //   "class": "small",
+            //   text: " (loaded in " + (dateAfter - dateBefore) + "ms)"
+            // }));
+
+            // ---------- 便利解压后的文件
+            zip.forEach(function (relativePath, zipEntry) { // 2) print entries
+              // console.log(relativePath)
+
+              // ---------- 当前文件大小
+              let file_size = zipEntry._data.uncompressedSize
+
+              // ---------- 判断文件大小是否为0
+              if (file_size) {
+                zipEntry.async("blob").then((file) => {
+
+                  // console.log(file)
+                  let new_file = new File([file], relativePath);
+                  // console.log(new_file)
+                  // saveAs(new_file, relativePath);
+
+                  // let formData = new FormData();
+                  // let resFile = blobToFile(file, relativePath);
+                  // formData.append('file', resFile);
+
+                  // console.log(formData)
+
+
+                  // ---------- 发送请求
+                  $.ajax({
+                    url: "http://127.0.0.1:8000/test",
+                    type: "put",
+                    success(su) {
+                      console.log(`${is_zip}/${all_file_num} - ${relativePath} OK`);
+                      // ---------- 计数增加
+                      is_zip++
+                      // ---------- 文件总列表删除已发送的文件 剩下的是大小为0 或发送失败的文件
+                      file_name_list.splice(file_name_list.indexOf(relativePath), 1)
+                      console.log(file_name_list)
+                    },
+                    error(er) {
+                      console.log(relativePath, "ERROR");
+                    },
+                    // data:zipEntry,
+                    data: {
+                      "file-name": relativePath,
+                      "file-data": new_file,
+                      "file-size": file_size
+                    },
+                    dataType: "json",
+                    contentType: "application/x-www-form-urlencoded;charset=utf-8 "
+                  })
+
+
+                })
+
+              }
+
+
+
+              // $fileContent.append($("<li>", {
+              //   text: `${zipEntry.name} - ${zipEntry._data.uncompressedSize}`
+              // }));
+            });
+
+
+          },
+          function (e) {
+            // $result.append($("<div>", {
+            //   "class": "alert alert-danger",
+            //   text: "Error reading " + f.name + ": " + e.message
+            // }));
+          })
+    }
+
+    var files = evt.target.files;
+    // console.log(files);
+    for (var i = 0; i < files.length; i++) {
+      handleFile(files[i]);
+
+    }
+  });
+</script>
+
+</html>
