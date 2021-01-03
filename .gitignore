@@ -2,9 +2,11 @@
 *.log
 *.pot
 *.pyc
+*.key
 __pycache__
 db.sqlite3
 media
+key
  
 # Backup files #
 *.bak
