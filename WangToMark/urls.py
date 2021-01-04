@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from WEBAPI.views.BackgroundViews import *
+from WEBAPI.views.ExeViews import *
 
 background_url = [
     path("account", Account.as_view())
@@ -23,5 +24,6 @@ background_url = [
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("time_check_v2", TimeCheck.as_view()),
     path("v1/background/", include(background_url))
 ]

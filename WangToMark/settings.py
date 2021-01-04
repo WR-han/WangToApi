@@ -19,11 +19,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
-
+SECRET_KEY = MY_SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["wangtoapi.wrhan.cn", "wangto.wrhan.cn", "wrhan.cn"]
 
 # Application definition
 
@@ -45,7 +45,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -68,6 +68,8 @@ TEMPLATES = [
         },
     },
 ]
+
+DATABASES = MY_DATABASES
 
 WSGI_APPLICATION = 'WangToMark.wsgi.application'
 
@@ -118,6 +120,8 @@ CORS_ALLOW_METHODS = (
     'PUT',
     'VIEW',
 )
+
+CORS_ORIGIN_WHITELIST = MY_CORS_ORIGIN_WHITELIST
 
 CORS_ALLOW_HEADERS = (
     'XMLHttpRequest',
