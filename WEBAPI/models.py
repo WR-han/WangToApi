@@ -16,13 +16,14 @@ class WangtoUser(models.Model):
     }
 
     account = models.CharField("手机号/登录账号", max_length=11)
-    passworld = models.CharField("密码", max_length=64)
+    password = models.CharField("密码", max_length=64)
     account_msg = models.OneToOneField("WangtoAccount", on_delete=models.CASCADE, null=True, blank=True,
-                                   verbose_name="账户数据")
+                                       verbose_name="账户数据")
     information = models.OneToOneField("WangtoUserInfo", on_delete=models.CASCADE, null=True, blank=True,
                                        verbose_name="其他信息")
 
-    creator = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, verbose_name="创建者")
+    creator = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="my_leader",
+                                verbose_name="创建者")
     team = models.ManyToManyField("WangtoTeam", verbose_name="相关团队", through="WangtoTeamAllocation",
                                   related_name="WangtoUser")
 
@@ -84,7 +85,7 @@ class WangtoInspector(models.Model):
     }
 
     account = models.CharField("手机号/登录账号", max_length=11)
-    passworld = models.CharField("密码", max_length=64)
+    password = models.CharField("密码", max_length=64)
 
     creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
                                 related_name="WangtoInspector", null=True, blank=True)
@@ -107,7 +108,7 @@ class WangtoOperator(models.Model):
     }
 
     account = models.CharField("手机号/登录账号", max_length=11)
-    passworld = models.CharField("密码", max_length=64)
+    password = models.CharField("密码", max_length=64)
 
     creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
                                 related_name="WangtoOperator", null=True, blank=True)

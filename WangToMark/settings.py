@@ -23,7 +23,7 @@ SECRET_KEY = MY_SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["wangtoapi.wrhan.cn", "wangto.wrhan.cn", "wrhan.cn"]
+ALLOWED_HOSTS = ["wangtoapi.wrhan.cn", "wangto.wrhan.cn", "wrhan.cn", "127.0.0.1"]
 
 # Application definition
 

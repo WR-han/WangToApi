@@ -1,8 +1,10 @@
 import hmac
 
 from tool.authorization_token import *
-from rest_framework import response
+from rest_framework.response import Response
 from rest_framework.views import APIView
+from tool.serializer import my_serializer
+from WEBAPI.models import *
 
 
 class Account(APIView):
@@ -69,3 +71,33 @@ class Account(APIView):
     @check_bg_authorization_token
     def put(self, request):
         pass
+
+
+class Operator(APIView):
+    """
+    标注员相关
+    """
+
+    @check_bg_authorization_token
+    def get(self, request):
+        # 权限
+        identity = request.identity
+        # 用户实例
+        user_obj = request.user_obj
+
+        print(WangtoUser)
+
+        # 管理员
+        if identity == "admin":
+
+            operator_dict = {}
+            my_operator = my_serializer(WangtoUser, user_obj, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
+            operator_dict["my"] = my_operator
+
+            for leader in user_obj.my_leader.all():
+                leader_operator = my_serializer(WangtoUser, leader, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
+                operator_dict[leader.account] = leader_operator
+
+            # serializer = my_serializer(WangtoUser, user_obj, False, field=("my_leader",),_depth=1)
+
+            return Response(operator_dict)

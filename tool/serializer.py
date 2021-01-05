@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 
-def my_serializer(_model, instance=None, many=False, data=None, field=None, _depth=None, allow=(), excludes=()):
+def my_serializer(_model, instance=None, many=False, data=None, field=(), _depth=None, allow=(), excludes=()):
     """
     通用序列化器
     :param _model: 所需序列化的model对象

@@ -19,7 +19,8 @@ from WEBAPI.views.BackgroundViews import *
 from WEBAPI.views.ExeViews import *
 
 background_url = [
-    path("account", Account.as_view())
+    path("account", Account.as_view()),
+    path("operator", Operator.as_view())
 ]
 
 urlpatterns = [
