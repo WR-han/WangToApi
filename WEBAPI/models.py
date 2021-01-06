@@ -25,8 +25,8 @@ class WangtoUser(models.Model):
 
     creator = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="my_leader",
                                 verbose_name="创建者")
-    team = models.ManyToManyField("WangtoTeam", verbose_name="相关团队", through="WangtoTeamAllocation",
-                                  related_name="WangtoUser")
+    # team = models.ManyToManyField("WangtoTeam", verbose_name="相关团队", through="WangtoTeamAllocation",
+    #                               related_name="WangtoUser")
 
     state = models.CharField("状态", max_length=7, choices=state_choices)
     identity = models.CharField("身份", max_length=6, choices=identity_choices)
@@ -54,17 +54,17 @@ class WangtoUserInfo(models.Model):
     company = models.CharField("公司名称", max_length=30, null=True, blank=True)
 
 
-class WangtoTeamAllocation(models.Model):
-    """
-    团队分配表
-    用户(项目负责人)<->团队 中间表
-    """
-    WangtoUser = models.ForeignKey("WangtoUser", on_delete=models.CASCADE, verbose_name="用户",
-                                   related_name="WangtoTeamAllocation")
-    WangtoTeam = models.ForeignKey("WangtoTeam", on_delete=models.CASCADE, verbose_name="团队",
-                                   related_name="WangtoTeamAllocation")
-
-    allocation_time = models.DateTimeField("分配时间", auto_now_add=True)
+# class WangtoTeamAllocation(models.Model):
+#     """
+#     团队分配表
+#     用户(项目负责人)<->团队 中间表
+#     """
+#     WangtoUser = models.ForeignKey("WangtoUser", on_delete=models.CASCADE, verbose_name="用户",
+#                                    related_name="WangtoTeamAllocation")
+#     WangtoTeam = models.ForeignKey("WangtoTeam", on_delete=models.CASCADE, verbose_name="团队",
+#                                    related_name="WangtoTeamAllocation")
+#
+#     allocation_time = models.DateTimeField("分配时间", auto_now_add=True)
 
 
 class WangtoTeam(models.Model):
@@ -73,8 +73,11 @@ class WangtoTeam(models.Model):
     """
     team_name = models.CharField("团队名称", max_length=20)
 
-    creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者", related_name="WangtoTeam",
+    creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者", related_name="my_team",
                                 null=True, blank=True)
+
+    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="负责人", related_name="WangtoTeam",
+                               null=True, blank=True)
 
     register_time = models.DateTimeField("注册时间", auto_now_add=True)
 
@@ -94,6 +97,8 @@ class WangtoInspector(models.Model):
 
     creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
                                 related_name="WangtoInspector", null=True, blank=True)
+    owner = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创拥有者",
+                              related_name="my_inspector", null=True, blank=True)
     data = models.ManyToManyField("WangtoData", verbose_name="分配任务", through="WangtoDataAllocation",
                                   related_name="WangtoInspector")
 
@@ -121,6 +126,8 @@ class WangtoOperator(models.Model):
 
     creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
                                 related_name="WangtoOperator", null=True, blank=True)
+    owner = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="拥有者",
+                              related_name="my_operator", null=True, blank=True)
     data = models.ManyToManyField("WangtoData", verbose_name="分配任务", through="WangtoDataAllocation",
                                   related_name="WangtoOperator")
 

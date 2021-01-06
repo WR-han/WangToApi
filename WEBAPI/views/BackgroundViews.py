@@ -7,6 +7,7 @@ from tool.authorization_token import *
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters
+from rest_framework import pagination
 from tool.serializer import my_serializer
 from WEBAPI.models import *
 
@@ -80,6 +81,19 @@ class Operator(ListAPIView):
     """
     filter_backends = (filters.SearchFilter,)
     search_fields = ()
+    pagination_class = pagination.LimitOffsetPagination
+
+    # 重写分页后的返回数据json样式
+    def get_paginated_response(self, data):
+        print(self.paginator)
+        return Response({
+            "code": 0,
+            'next': self.paginator.get_next_link(),
+            'previous': self.paginator.get_previous_link(),
+            "data": data
+        })
+
+        # return self.paginator.get_paginated_response(data)
 
     @check_bg_authorization_token
     def list(self, request, *args, **kwargs):
@@ -95,63 +109,18 @@ class Operator(ListAPIView):
         except MultiValueDictKeyError as e:
             self.search_fields = ()
 
-        # 分页
-        # page = self.paginate_queryset(queryset)
-        # if page is not None:
-        #     serializer = self.get_serializer(page, many=True)
-        #     return self.get_paginated_response(serializer.data)
-
+        # 判断权限
         if identity == "admin":
-            operator_qs = None
+            my_operator = self.filter_queryset(user_obj.my_operator.order_by("creator"))
 
-            for leader in user_obj.my_leader.all():
-                if not operator_qs:
-                    operator_qs = leader.WangtoOperator.all()
-                else:
-                    operator_qs += leader.WangtoOperator.all()
-                # queryset = self.filter_queryset(leader.WangtoOperator.all())
-                # leader_operator = my_serializer(WangtoOperator, queryset, True,
-                #                                 field=("nick_name", "state", "register_time", "expire_time"),
-                #                                 _depth=1).data
-                # operator_dict[leader.account] = leader_operator
+            # 分页
+            page = self.paginate_queryset(my_operator)
+            if page is not None:
+                serializer = my_serializer(WangtoOperator, page, True,
+                                           field=("nick_name", "state", "register_time", "expire_time", "creator"))
+                return self.get_paginated_response(serializer.data)
 
-            operator_qs = self.filter_queryset(operator_qs)
-            leader_operator = my_serializer(WangtoOperator, operator_qs, True,
-                                            field=("nick_name", "state", "register_time", "expire_time"),
-                                            _depth=1).data
+            serializer = my_serializer(WangtoOperator, my_operator, True,
+                                       field=("nick_name", "state", "register_time", "expire_time", "creator"))
 
-            # print(operator_qs)
-            return Response(leader_operator)
-
-        # serializer = my_serializer(WangtoUser, queryset, field=("WangtoOperator",), many=True, _depth=1)
-        # return Response(serializer.data)
-
-    # class Operator(APIView):
-#     """
-#     标注员相关
-#     """
-#
-#     @check_bg_authorization_token
-#     def get(self, request):
-#         # 权限
-#         identity = request.identity
-#         # 用户实例
-#         user_obj = request.user_obj
-#
-#         # print(WangtoUser)
-#
-#         # 管理员
-#         if identity == "admin":
-#
-#             operator_dict = {}
-#
-#             my_operator = my_serializer(WangtoUser, user_obj, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
-#             operator_dict["my"] = my_operator
-#
-#             for leader in user_obj.my_leader.all():
-#                 leader_operator = my_serializer(WangtoUser, leader, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
-#                 operator_dict[leader.account] = leader_operator
-#
-#             # serializer = my_serializer(WangtoUser, user_obj, False, field=("my_leader",),_depth=1)
-#
-#             return Response(operator_dict)
+            return Response(serializer.data)
