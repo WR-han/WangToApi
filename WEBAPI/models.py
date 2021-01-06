@@ -15,6 +15,7 @@ class WangtoUser(models.Model):
         ("leader", "项目负责人")
     }
 
+    nick_name = models.CharField("昵称", max_length=20, default="wangto用户")
     account = models.CharField("手机号/登录账号", max_length=11)
     password = models.CharField("密码", max_length=64)
     account_msg = models.OneToOneField("WangtoAccount", on_delete=models.CASCADE, null=True, blank=True,
@@ -31,6 +32,9 @@ class WangtoUser(models.Model):
     identity = models.CharField("身份", max_length=6, choices=identity_choices)
 
     register_time = models.DateTimeField("注册时间", auto_now_add=True)
+
+    def __str__(self):
+        return '用户-{}'.format(self.nick_name)
 
 
 class WangtoAccount(models.Model):
@@ -84,6 +88,7 @@ class WangtoInspector(models.Model):
         ("invalid", "弃用")
     }
 
+    nick_name = models.CharField("昵称", max_length=20, default="wangto审核员")
     account = models.CharField("手机号/登录账号", max_length=11)
     password = models.CharField("密码", max_length=64)
 
@@ -97,6 +102,9 @@ class WangtoInspector(models.Model):
     register_time = models.DateTimeField("注册时间", auto_now_add=True)
     expire_time = models.DateTimeField("到期时间", null=True, blank=True)
 
+    def __str__(self):
+        return '审核员-{}'.format(self.nick_name)
+
 
 class WangtoOperator(models.Model):
     """
@@ -107,6 +115,7 @@ class WangtoOperator(models.Model):
         ("invalid", "弃用")
     }
 
+    nick_name = models.CharField("昵称", max_length=20, default="wangto标注员")
     account = models.CharField("手机号/登录账号", max_length=11)
     password = models.CharField("密码", max_length=64)
 
@@ -119,6 +128,9 @@ class WangtoOperator(models.Model):
 
     register_time = models.DateTimeField("注册时间", auto_now_add=True)
     expire_time = models.DateTimeField("到期时间", null=True, blank=True)
+
+    def __str__(self):
+        return '标注员-{}'.format(self.nick_name)
 
 
 # ▼ --------------------------------------- ▼  data_models  ▼ --------------------------------------- ▼

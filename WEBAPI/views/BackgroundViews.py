@@ -1,8 +1,12 @@
 import hmac
 
+from django.utils.datastructures import MultiValueDictKeyError
+from rest_framework.generics import ListAPIView
+
 from tool.authorization_token import *
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import filters
 from tool.serializer import my_serializer
 from WEBAPI.models import *
 
@@ -36,18 +40,15 @@ class Account(APIView):
 
         # 数据库查询
         try:
-            print(account, password)
             account_obj = WangtoUser.objects.get(account=account)
             if password == account:
-                print(1)
                 password_h = password
             else:
-                print(2)
                 h = hmac.new(salt, password.encode(), digestmod="sha256")
                 password_h = h.hexdigest()
 
             # 密码比对
-            if account_obj.passworld == password_h:
+            if account_obj.password == password_h:
                 # 生成token
                 token = make_bg_authorization_token(wangto_user_id=account_obj.pk)
                 return response.Response({
@@ -73,31 +74,84 @@ class Account(APIView):
         pass
 
 
-class Operator(APIView):
+class Operator(ListAPIView):
     """
     标注员相关
     """
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ()
 
     @check_bg_authorization_token
-    def get(self, request):
+    def list(self, request, *args, **kwargs):
         # 权限
         identity = request.identity
         # 用户实例
         user_obj = request.user_obj
 
-        print(WangtoUser)
+        # 前端搜索字段
+        try:
+            search_field = request.GET["field"]
+            self.search_fields = (search_field,)
+        except MultiValueDictKeyError as e:
+            self.search_fields = ()
 
-        # 管理员
+        # 分页
+        # page = self.paginate_queryset(queryset)
+        # if page is not None:
+        #     serializer = self.get_serializer(page, many=True)
+        #     return self.get_paginated_response(serializer.data)
+
         if identity == "admin":
-
-            operator_dict = {}
-            my_operator = my_serializer(WangtoUser, user_obj, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
-            operator_dict["my"] = my_operator
+            operator_qs = None
 
             for leader in user_obj.my_leader.all():
-                leader_operator = my_serializer(WangtoUser, leader, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
-                operator_dict[leader.account] = leader_operator
+                if not operator_qs:
+                    operator_qs = leader.WangtoOperator.all()
+                else:
+                    operator_qs += leader.WangtoOperator.all()
+                # queryset = self.filter_queryset(leader.WangtoOperator.all())
+                # leader_operator = my_serializer(WangtoOperator, queryset, True,
+                #                                 field=("nick_name", "state", "register_time", "expire_time"),
+                #                                 _depth=1).data
+                # operator_dict[leader.account] = leader_operator
 
-            # serializer = my_serializer(WangtoUser, user_obj, False, field=("my_leader",),_depth=1)
+            operator_qs = self.filter_queryset(operator_qs)
+            leader_operator = my_serializer(WangtoOperator, operator_qs, True,
+                                            field=("nick_name", "state", "register_time", "expire_time"),
+                                            _depth=1).data
 
-            return Response(operator_dict)
+            # print(operator_qs)
+            return Response(leader_operator)
+
+        # serializer = my_serializer(WangtoUser, queryset, field=("WangtoOperator",), many=True, _depth=1)
+        # return Response(serializer.data)
+
+    # class Operator(APIView):
+#     """
+#     标注员相关
+#     """
+#
+#     @check_bg_authorization_token
+#     def get(self, request):
+#         # 权限
+#         identity = request.identity
+#         # 用户实例
+#         user_obj = request.user_obj
+#
+#         # print(WangtoUser)
+#
+#         # 管理员
+#         if identity == "admin":
+#
+#             operator_dict = {}
+#
+#             my_operator = my_serializer(WangtoUser, user_obj, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
+#             operator_dict["my"] = my_operator
+#
+#             for leader in user_obj.my_leader.all():
+#                 leader_operator = my_serializer(WangtoUser, leader, False, field=("WangtoOperator",), _depth=1).data["WangtoOperator"]
+#                 operator_dict[leader.account] = leader_operator
+#
+#             # serializer = my_serializer(WangtoUser, user_obj, False, field=("my_leader",),_depth=1)
+#
+#             return Response(operator_dict)

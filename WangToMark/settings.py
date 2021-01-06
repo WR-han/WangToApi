@@ -136,3 +136,7 @@ CORS_ALLOW_HEADERS = (
     'x-requested-with',
     'Pragma',
 )
+
+REST_FRAMEWORK = {
+    "PAGE_SIZE": 1
+}

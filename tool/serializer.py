@@ -17,23 +17,16 @@ def my_serializer(_model, instance=None, many=False, data=None, field=(), _depth
 
     class Serializer(serializers.ModelSerializer):
 
-        # # 数据编辑
-        # # name --> 返回json键名
-        # # source --> 所绑定数据库字段名
-        # # error_messages --> 自定义错误信息(字典)
-        # m_ac= serializers.EmailField(max_length=50,error_messages={
-        #     'max_length':'字段超长'
-        # })
+        # account_msg = serializers.CharField(source="account_msg.capacity")
+        for f in field:
+            if "time" in f:
+                exec(f"{f} = serializers.DateTimeField(format='%Y-%m-%d %X')")
 
-        # # 数据新增
-        # # id_10 --> 新增json键名
-        # # get_id_10 --> 数据编辑方法
-        # id_10 = serializers.SerializerMethodField()
-        # def get_id_10(self,instance):
-        #     return instance.id * 10
-        #
-        # # 时间格式化
-        # date = serializers.DateTimeField(format='%Y-%m-%d %X')
+        # WangtoOperator = serializers.SerializerMethodField()
+
+        # def get_WangtoOperator(self,instance):
+        #     print(instance)
+        #     return instance.pk
 
         class Meta:
             """
@@ -46,6 +39,7 @@ def my_serializer(_model, instance=None, many=False, data=None, field=(), _depth
             # 有指定的查询字段
             if field:
                 fields = field
+
 
             # 无指定的查询字段
             else:

@@ -26,5 +26,5 @@ background_url = [
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("time_check_v2", TimeCheck.as_view()),
-    path("v1/background/", include(background_url))
+    path("v1/backend/", include(background_url))
 ]
