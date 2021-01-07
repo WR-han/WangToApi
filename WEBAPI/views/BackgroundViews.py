@@ -75,25 +75,66 @@ class Account(APIView):
         pass
 
 
+# class Operator(ListAPIView):
+#     """
+#     标注员相关
+#     """
+#     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+#     # 可查询字段
+#     search_fields = ()
+#     # 允许排序字段
+#     # ordering_fields = ("creator",)
+#     ordering_fields = "__all__"
+#     pagination_class = pagination.LimitOffsetPagination
+#
+#     # 重写分页后的返回数据json样式
+#     def get_paginated_response(self, data):
+#         print(self.paginator)
+#         return Response({
+#             "code": 0,
+#             'next': self.paginator.get_next_link(),
+#             'previous': self.paginator.get_previous_link(),
+#             "data": data
+#         })
+#
+#         # return self.paginator.get_paginated_response(data)
+#
+#     @check_bg_authorization_token
+#     def list(self, request, *args, **kwargs):
+#         # 权限
+#         identity = request.identity
+#         # 用户实例
+#         user_obj = request.user_obj
+#
+#         # 前端搜索字段
+#         try:
+#             search_field = request.GET["field"]
+#             self.search_fields = (search_field,)
+#         except MultiValueDictKeyError as e:
+#             self.search_fields = ()
+#
+#         # 判断权限
+#         if identity == "admin":
+#             # my_operator = self.filter_queryset(user_obj.my_operator.order_by("-creator"))
+#             my_operator = self.filter_queryset(user_obj.my_operator.all())
+#
+#             # 分页
+#             page = self.paginate_queryset(my_operator)
+#             if page is not None:
+#                 serializer = my_serializer(WangtoOperator, page, True,
+#                                            field=("nick_name", "state", "register_time", "expire_time", "creator"))
+#                 return self.get_paginated_response(serializer.data)
+#
+#             serializer = my_serializer(WangtoOperator, my_operator, True,
+#                                        field=("nick_name", "state", "register_time", "expire_time", "creator"))
+#
+#             return Response(serializer.data)
+
+
 class Operator(ListAPIView):
     """
     标注员相关
     """
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ()
-    pagination_class = pagination.LimitOffsetPagination
-
-    # 重写分页后的返回数据json样式
-    def get_paginated_response(self, data):
-        print(self.paginator)
-        return Response({
-            "code": 0,
-            'next': self.paginator.get_next_link(),
-            'previous': self.paginator.get_previous_link(),
-            "data": data
-        })
-
-        # return self.paginator.get_paginated_response(data)
 
     @check_bg_authorization_token
     def list(self, request, *args, **kwargs):
@@ -102,25 +143,17 @@ class Operator(ListAPIView):
         # 用户实例
         user_obj = request.user_obj
 
-        # 前端搜索字段
-        try:
-            search_field = request.GET["field"]
-            self.search_fields = (search_field,)
-        except MultiValueDictKeyError as e:
-            self.search_fields = ()
-
         # 判断权限
         if identity == "admin":
-            my_operator = self.filter_queryset(user_obj.my_operator.order_by("creator"))
+            operator_serializer = my_serializer(WangtoOperator, many=True, field=("state",))
+            # print(type(operator_serializer))
+            exec("a=1", globals())
+            print(a)
+            # print(operator_serializer)
+            serializer = my_serializer(WangtoUser, user_obj.my_leader, many=True, _depth=1,
+                                       field=("id", "nick_name", "password", "account", "WangtoOperator"),
+                                       child=("WangtoOperator", operator_serializer))
 
-            # 分页
-            page = self.paginate_queryset(my_operator)
-            if page is not None:
-                serializer = my_serializer(WangtoOperator, page, True,
-                                           field=("nick_name", "state", "register_time", "expire_time", "creator"))
-                return self.get_paginated_response(serializer.data)
-
-            serializer = my_serializer(WangtoOperator, my_operator, True,
-                                       field=("nick_name", "state", "register_time", "expire_time", "creator"))
+            # serializer = leader_serializer(instance=user_obj.my_leader, many=True)
 
             return Response(serializer.data)
