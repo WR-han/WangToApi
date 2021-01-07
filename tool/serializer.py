@@ -1,71 +1,39 @@
 from rest_framework import serializers
-from WEBAPI.models import *
 
 
-# class operator_serializer(serializers.Serializer):
-#     id = serializers.IntegerField(source=id)
-#
-#
-# class leader_serializer(serializers.ModelSerializer):
-#     WangtoOperator = operator_serializer()
-
-    # class Meta:
-    #     """
-    #     model: 数据库绑定
-    #     fields: 查询字段选择
-    #     exclude: 查询字段筛选
-    #     """
-    #     model = WangtoUser
-    #     fields = ('WangtoOperator',)
-
-
-# def variable2str(variable):
-#     return eval(f"list(dict({variable}={variable}).keys())[0]")
-
-
-def my_serializer(_model=None, instance=None, many=False, data=None, field=(), _depth=None, allow=(), excludes=(),
-                  child=None):
+def my_serializer(_model=None, instance=None, many=False, data=None, field=None, _depth=None, allow=(), excludes=(),
+                  childs=None, is_child=False):
     """
     通用序列化器
     :param _model: 所需序列化的model对象
     :param instance: 查询结果集/查询结果对象 (实例)
-    :param many: 序列化器many参数 (GET)
-    :param data: 接收到的json (PUT/POST)
-    :param field: 需要查询的字段名 (GET)
-    :param _depth: 外键层级 (GET)
-    :param allow: 允许修改的字段 (PUT/POST)
-    :param excludes: 排除字段 (GET)
-    :param child: 子序列化器及查询字段 (GET)(dict {"需要使用子序列化器的file_name":"子序列化器"})
+    :param many: 序列化器many参数   =>(GET)
+    :param data: 接收到的json   =>(PUT/POST)
+    :param field: 需要查询的字段名范围 (可迭代对象)/如果需要加载子序列化器，此参数必须为列表    =>(GET)
+    :param _depth: 外键层级   =>(GET)
+    :param allow: 允许修改的字段   =>(PUT/POST)
+    :param excludes: 排除字段   =>(GET)
+    :param childs: 加载子序列化器 (dict {"需要使用子序列化器的file_name":"子序列化器类"})   =>(GET)
+    :param is_child: 是否为创建子序列化器
     :return: 序列化器对象
+    :return: 有is_child字段时 返回序列化器类
     """
 
-    class Serializer(serializers.ModelSerializer):
+    class GeneralSerializer(serializers.ModelSerializer):
 
-        # account_msg = serializers.CharField(source="account_msg.capacity")
-        # WangtoOperator = child["WangtoOperator"]
-        # print(child)
-        if child:
-            print(child[1])
+        # 加载子序列化器
+        if childs:
+            for f in childs:
+                # 如果有需要查询的字段名范围
+                if field:
+                    # 在查询的字段名范围中加入需要使用子序列化器的字段
+                    field.append(f)
+                locals()[f] = childs[f](many=True)
+
+        # 时间格式化
         for f in field:
             if "time" in f:
-                exec(f"{f} = serializers.DateTimeField(format='%Y-%m-%d %X')")
-
-        # if child:
-        #     for f in child:
-        #         # print(f)
-        #         # print()
-        #         # print(child[f])
-        #         # print(locals())
-        #         # exec(f"{f}_serializer = {child[f]}")
-        #         # print(f"{f}_serializer = {child[f]}")
-        #         print(child[f])
-                # exec(f"{f} = {f}_serializer()")
-
-        # WangtoOperator = serializers.SerializerMethodField()
-
-        # def get_WangtoOperator(self,instance):
-        #     print(instance)
-        #     return instance.pk
+                locals()[f] = serializers.DateTimeField(format='%Y-%m-%d %X')
 
         class Meta:
             """
@@ -78,7 +46,6 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=(), _
             # 有指定的查询字段
             if field:
                 fields = field
-
 
             # 无指定的查询字段
             else:
@@ -96,6 +63,10 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=(), _
             if _depth:
                 depth = _depth
 
+    # 作为子序列化器
+    if is_child:
+        return GeneralSerializer
+
     # POST / PUT
     if data:
         allow = set(allow)
@@ -110,11 +81,11 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=(), _
                 if key in data.keys():
                     _data[key] = data[key]
 
-            return Serializer(data=_data, instance=instance)
+            return GeneralSerializer(data=_data, instance=instance)
 
         else:
-            return Serializer(data=data, instance=instance)
+            return GeneralSerializer(data=data, instance=instance)
 
     # GET
     else:
-        return Serializer(instance=instance, many=many)
+        return GeneralSerializer(instance=instance, many=many)
