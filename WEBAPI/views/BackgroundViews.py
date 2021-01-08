@@ -1,15 +1,32 @@
 import hmac
-
-from django.utils.datastructures import MultiValueDictKeyError
-from rest_framework.generics import ListAPIView
-
 from tool.authorization_token import *
+from django.utils.datastructures import MultiValueDictKeyError
+from rest_framework.generics import ListAPIView, CreateAPIView, UpdateAPIView
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters
 from rest_framework import pagination
+from rest_framework import permissions
 from tool.serializer import my_serializer
 from WEBAPI.models import *
+
+
+class MyFilter(filters.BaseFilterBackend):
+    """
+    自定义搜索类
+    """
+
+    def filter_queryset(self, request, queryset, view):
+        """
+        自定义搜索
+        :param request:
+        :param queryset:
+        :param view:
+        :return:
+        """
+        print("我是自定义过滤器")
+        return queryset
 
 
 class Account(APIView):
@@ -75,7 +92,7 @@ class Account(APIView):
         pass
 
 
-class Operator(ListAPIView):
+class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
     """
     标注员相关
     """
@@ -86,6 +103,9 @@ class Operator(ListAPIView):
     # ordering_fields = ("creator",)
     ordering_fields = "__all__"
     pagination_class = pagination.LimitOffsetPagination
+
+    # TODO
+    permissions_classes = (permissions.AllowAny, permissions.IsAuthenticated)
 
     # 重写分页后的返回数据json样式
     def get_paginated_response(self, data):
@@ -112,23 +132,50 @@ class Operator(ListAPIView):
             self.search_fields = ()
 
         # 判断权限
-        if identity == "admin":
-            # 子序列化器，用来对外键数据进行规范
-            operator_serializer = my_serializer(WangtoOperator, field=("state", "register_time"), is_child=True)
+        # if identity == "admin":
 
-            # 查询 (filter_queryset参数必须是查询结果集)
-            my_operator = self.filter_queryset(user_obj.my_leader.all())
+        # 子序列化器，用来对外键数据进行规范
+        operator_serializer = my_serializer(WangtoOperator, field=("state", "register_time", "nick_name", "id"),
+                                            is_child=True)
 
-            # 分页
-            page = self.paginate_queryset(my_operator)
-            if page is not None:
-                serializer = my_serializer(WangtoUser, page, True,
-                                           field=["nick_name", "state", "register_time", "identity", "creator"],
-                                           childs={"WangtoOperator": operator_serializer})
-                return self.get_paginated_response(serializer.data)
+        # 查询 (filter_queryset参数必须是查询结果集)
+        my_operator = self.filter_queryset(user_obj.my_leader.all())
 
-            serializer = my_serializer(WangtoUser, my_operator, True,
+        # 分页
+        page = self.paginate_queryset(my_operator)
+        if page is not None:
+            serializer = my_serializer(WangtoUser, page, True,
                                        field=["nick_name", "state", "register_time", "identity", "creator"],
                                        childs={"WangtoOperator": operator_serializer})
+            return self.get_paginated_response(serializer.data)
 
-            return Response(serializer.data)
+        serializer = my_serializer(WangtoUser, my_operator, True,
+                                   field=["nick_name", "register_time", "identity", "creator"],
+                                   childs={"WangtoOperator": operator_serializer})
+
+        return Response(serializer.data)
+
+    @check_bg_authorization_token
+    def create(self, request, *args, **kwargs):
+        print(123)
+        # serializer = self.get_serializer(data=request.data)
+        serializer = my_serializer(WangtoOperator, data={"nick_name": "hahaha"})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @check_bg_authorization_token
+    def update(self, request, *args, **kwargs):
+
+        instance = WangtoOperator.objects.get(id=1)
+        serializer = my_serializer(WangtoOperator, instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)

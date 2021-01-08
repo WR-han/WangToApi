@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 
 def my_serializer(_model=None, instance=None, many=False, data=None, field=None, _depth=None, allow=(), excludes=(),
-                  childs=None, is_child=False):
+                  childs=None, is_child=False, partial=False):
     """
     通用序列化器
     :param _model: 所需序列化的model对象
@@ -15,6 +15,7 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
     :param excludes: 排除字段   =>(GET)
     :param childs: 加载子序列化器 (dict {"需要使用子序列化器的file_name":"子序列化器类"})   =>(GET)
     :param is_child: 是否为创建子序列化器
+    :param partial: 是否允许部分字段更新   =>(POST/PUT)
     :return: 序列化器对象
     :return: 有is_child字段时 返回序列化器类
     """
@@ -31,9 +32,10 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
                 locals()[f] = childs[f](many=True)
 
         # 时间格式化
-        for f in field:
-            if "time" in f:
-                locals()[f] = serializers.DateTimeField(format='%Y-%m-%d %X')
+        if field:
+            for f in field:
+                if "time" in f:
+                    locals()[f] = serializers.DateTimeField(format='%Y-%m-%d %X')
 
         class Meta:
             """
@@ -81,10 +83,10 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
                 if key in data.keys():
                     _data[key] = data[key]
 
-            return GeneralSerializer(data=_data, instance=instance)
+            return GeneralSerializer(data=_data, instance=instance, partial=partial)
 
         else:
-            return GeneralSerializer(data=data, instance=instance)
+            return GeneralSerializer(data=data, instance=instance, partial=partial)
 
     # GET
     else:
