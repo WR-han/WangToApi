@@ -137,6 +137,13 @@ CORS_ALLOW_HEADERS = (
     'Pragma',
 )
 
-# REST_FRAMEWORK = {
-#     "PAGE_SIZE": 1
-# }
+REST_FRAMEWORK = {
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     # 'rest_framework.permissions.IsAuthenticated',
+    # ],
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.SearchFilter', 'rest_framework.filters.OrderingFilter'),
+    'DEFAULT_THROTTLE_RATES': {
+        "anon": "1/min",
+        # "sustained": "1000/day"
+    }
+}

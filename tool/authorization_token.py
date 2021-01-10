@@ -1,6 +1,8 @@
 from WEBAPI.models import WangtoUser
 from rest_framework import response
 from key.key import *
+from functools import wraps
+from django.utils.datastructures import MultiValueDictKeyError
 
 import datetime
 import jwt
@@ -33,14 +35,26 @@ def check_bg_authorization_token(func):
     :return:
     """
 
+    @wraps(func)
     def decorator(self, request, *args, **kwargs):
         try:
             token = request.META["HTTP_AUTHORIZATION"]
             res = jwt.decode(token.encode(), salt, algorithms="HS256")
             wangto_user_id = res["wangto_user_id"]
             wangto_user_obj = WangtoUser.objects.get(id=wangto_user_id)
+            # 前端搜索字段
+            try:
+                search_fields = request.GET["field"].split(",")
+            except MultiValueDictKeyError as e:
+                search_fields = ()
+            try:
+                data_category = request.GET["data_category"]
+            except MultiValueDictKeyError as e:
+                data_category = None
             setattr(request, "user_obj", wangto_user_obj)
             setattr(request, "identity", wangto_user_obj.identity)
+            setattr(request, "search_fields", search_fields)
+            setattr(request, "data_category", data_category)
 
         except Exception as e:
             return response.Response({
