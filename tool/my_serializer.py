@@ -95,11 +95,13 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
     else:
         ser = GeneralSerializer(instance=instance, many=many)
         # 加入表头字段供前端使用
+        need_field = None
         if "id" in field:
-            field.remove("id")
+            need_field = field.copy()
+            need_field.remove("id")
         if childs:
-            field_header = get_model_field(_model, field, childs.keys())
+            field_header = get_model_field(_model, need_field, childs.keys())
         else:
-            field_header = get_model_field(_model, field, [])
+            field_header = get_model_field(_model, need_field, [])
         setattr(ser, "field_header", field_header)
         return ser

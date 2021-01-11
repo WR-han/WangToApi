@@ -63,12 +63,13 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
 
     @check_bg_authorization_token
     def create(self, request, *args, **kwargs):
-        # serializer = self.get_serializer(data=request.data)
-        serializer = my_serializer(WangtoOperator, data={"nick_name": "hahaha"})
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        print(request.data)
+        # serializer = my_serializer(WangtoOperator, data={"nick_name": "hahaha"})
+        # serializer.is_valid(raise_exception=True)
+        # self.perform_create(serializer)
+        # headers = self.get_success_headers(serializer.data)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response({"code": 123})
 
     @check_bg_authorization_token
     def update(self, request, *args, **kwargs):
@@ -136,7 +137,6 @@ class Leader(ListAPIView, CreateAPIView, UpdateAPIView):
                 # })
             elif data_category == "drop":
                 serializer = my_serializer(WangtoUser, screen_queryset, many=True, field=["nick_name", "account", "id"])
-                print(serializer.data)
                 return Response({
                     "code": 200,
                     "data": serializer.data
