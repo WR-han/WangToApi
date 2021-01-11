@@ -19,5 +19,5 @@ from WEBAPI.views.BackgroundViews import Login, WorkersManagement
 backend_url = [
     path("Login", Login.Login.as_view()),
     path("workersManagement/operator", WorkersManagement.Operator.as_view()),
-    path("workersManagement/leader", WorkersManagement.Operator.as_view())
+    path("workersManagement/leader", WorkersManagement.Leader.as_view())
 ]

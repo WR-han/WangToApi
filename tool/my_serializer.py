@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from rest_framework import pagination
-from rest_framework.response import Response
+from tool.others import get_model_field
 
 
 def my_serializer(_model=None, instance=None, many=False, data=None, field=None, _depth=None, allow=(), excludes=(),
@@ -11,17 +10,24 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
     :param instance: 查询结果集/查询结果对象 (实例)
     :param many: 序列化器many参数   =>(GET)
     :param data: 接收到的json   =>(PUT/POST)
-    :param field: 需要查询的字段名范围 (可迭代对象)/如果需要加载子序列化器，此参数必须为列表    =>(GET)
+    :param field: 需要查询的字段名范围 (列表)   =>(GET)
     :param _depth: 外键层级   =>(GET)
     :param allow: 允许修改的字段   =>(PUT/POST)
-    :param excludes: 排除字段   =>(GET)
+    :param excludes: 排除字段 (并非调用serializer自带exclude 而是用此生成field)   =>(GET)
     :param childs: 加载子序列化器   =>(GET)
         格式   =>(dict {"需要使用子序列化器的外键file_name":("自定义的子序列化器类","True/False 对应35行的many=")
     :param is_child: 是否为创建子序列化器
-    :param partial: 是否允许部分字段更新   =>(POST/PUT)
+    :param partial: 是否允许部分字段更新   =>(PUT/POST)
     :return: 序列化器对象
     :return: 有is_child字段时 返回序列化器类
     """
+    # 获取全部字段
+    all_filed = [f.name for f in _model._meta.fields]
+    # 根据排除字段生成field
+    if not field and excludes:
+        set_all_filed = set(all_filed)
+        set_excludes = set(excludes)
+        field = list(set_all_filed - set_excludes)
 
     class GeneralSerializer(serializers.ModelSerializer):
 
@@ -60,10 +66,7 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
 
                 # 无data参数(GET) 设置排除字段
                 else:
-                    if excludes:
-                        exclude = excludes
-                    else:
-                        fields = "__all__"
+                    fields = "__all__"
 
             if _depth:
                 depth = _depth
@@ -92,31 +95,11 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
     else:
         ser = GeneralSerializer(instance=instance, many=many)
         # 加入表头字段供前端使用
-        field_header = []
-        for f in field:
-            # id不进行展示 外键字段需前端按需展示
-            if f != "id" and f not in childs.keys():
-                field_header.append((f, getattr(_model, f).field.verbose_name))
+        if "id" in field:
+            field.remove("id")
+        if childs:
+            field_header = get_model_field(_model, field, childs.keys())
+        else:
+            field_header = get_model_field(_model, field, [])
         setattr(ser, "field_header", field_header)
         return ser
-
-
-class MyPagination(pagination.LimitOffsetPagination):
-    """
-    自定义分页结果格式
-    """
-
-    # 重写分页后的返回数据json样式
-    def get_paginated_response(self, serializer):
-        try:
-            field_header = serializer.field_header
-        except Exception as e:
-            field_header = [f"{e}"]
-        return Response({
-            "code": 200,
-            "next": self.get_next_link(),
-            "previous": self.get_previous_link(),
-            "count": self.count,
-            "data": serializer.data,
-            "field_header": field_header
-        })

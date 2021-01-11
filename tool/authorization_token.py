@@ -50,7 +50,7 @@ def check_bg_authorization_token(func):
             try:
                 data_category = request.GET["data_category"]
             except MultiValueDictKeyError as e:
-                data_category = None
+                data_category = "all"
             setattr(request, "user_obj", wangto_user_obj)
             setattr(request, "identity", wangto_user_obj.identity)
             setattr(request, "search_fields", search_fields)
