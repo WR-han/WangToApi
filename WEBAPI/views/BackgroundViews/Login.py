@@ -1,11 +1,8 @@
-import hmac
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from WEBAPI.models import WangtoUser
 from tool.authorization_token import make_bg_authorization_token
-from key.key import *
+from tool.others import create_password
 
 
 class Login(APIView):
@@ -34,8 +31,7 @@ class Login(APIView):
             if password == account:
                 password_h = password
             else:
-                h = hmac.new(salt, password.encode(), digestmod="sha256")
-                password_h = h.hexdigest()
+                password_h = create_password(password)
 
             # 密码比对
             if account_obj.password == password_h:

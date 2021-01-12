@@ -1,3 +1,5 @@
+import hmac
+from key.key import salt
 from rest_framework import pagination
 from rest_framework.response import Response
 
@@ -38,3 +40,9 @@ class MyPagination(pagination.LimitOffsetPagination):
             "data": serializer.data,
             "field_header": field_header
         })
+
+
+def create_password(password):
+    h = hmac.new(salt, password.encode(), digestmod='sha256')
+    m_ps_h = h.hexdigest()
+    return m_ps_h

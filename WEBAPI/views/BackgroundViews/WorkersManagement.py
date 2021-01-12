@@ -84,36 +84,30 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
                 "code": 401
             })
 
+        account = request.data.get("account")
+        if len(WangtoOperator.objects.filter(account=account)) != 0:
+            return Response({
+                "code": "403",
+                "data": "此手机号已注册"
+            })
+
         operator_obj = WangtoOperator()
         operator_obj.owner = owner_obj
         operator_obj.creator = leader_obj
         operator_obj.save()
-        # print(operator_obj)
         serializer = my_serializer(WangtoOperator, operator_obj, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        # operator_obj.owner = owner_obj
-        # operator_obj.creator = leader_obj
-        # operator_obj.save()
-        UTC_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-        # TODO
-        for f in serializer.data:
-            print(serializer.data)
-            if "time" in f:
-                utcTime = sb.datetime.strptime(serializer.data[f], UTC_FORMAT)
-                localtime = utcTime + sb.timedelta(hours=8)
-                serializer.data[f] = localtime
+        creator_serializer = my_serializer(WangtoUser, field=["nick_name"], is_child=True)
+        serializer = my_serializer(WangtoOperator, operator_obj,
+                                   field=["id", "nick_name", "account", "register_time", "expire_time",
+                                          "state"],
+                                   childs={"creator": (creator_serializer, False)})
 
         return Response({
             "code": 200,
             "data": serializer.data
         })
-
-        # serializer = my_serializer(WangtoOperator, data={"nick_name": "hahaha"})
-        # serializer.is_valid(raise_exception=True)
-        # self.perform_create(serializer)
-        # headers = self.get_success_headers(serializer.data)
-        # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @check_bg_authorization_token
     def update(self, request, *args, **kwargs):

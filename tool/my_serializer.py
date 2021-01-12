@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from tool.others import get_model_field
+from tool.others import get_model_field, create_password
+from tool.authorization_token import make_bg_authorization_token
 
 
 def my_serializer(_model=None, instance=None, many=False, data=None, field=None, _depth=None, allow=(), excludes=(),
@@ -28,6 +29,10 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
         set_all_filed = set(all_filed)
         set_excludes = set(excludes)
         field = list(set_all_filed - set_excludes)
+
+    if data and "password" in data.keys():
+        password = data["password"]
+        data["password"] = create_password(password)
 
     class GeneralSerializer(serializers.ModelSerializer):
 
