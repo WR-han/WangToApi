@@ -1,10 +1,12 @@
-from tool.authorization_token import *
+import datetime as sb
+
 from rest_framework.generics import ListAPIView, CreateAPIView, UpdateAPIView
-from rest_framework import status
 from rest_framework.response import Response
+
+from WEBAPI.models import *
+from tool.authorization_token import *
 from tool.my_serializer import my_serializer
 from tool.others import MyPagination
-from WEBAPI.models import *
 
 
 class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
@@ -20,11 +22,11 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
 
     @check_bg_authorization_token
     def list(self, request, *args, **kwargs):
-
         # 权限
         identity = request.identity
         # 用户实例
         user_obj = request.user_obj
+
         # 前端搜索字段
         self.search_fields = request.search_fields
         # 请求数据类型
@@ -63,13 +65,55 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
 
     @check_bg_authorization_token
     def create(self, request, *args, **kwargs):
-        print(request.data)
+        # 权限
+        identity = request.identity
+        # 用户实例
+        user_obj = request.user_obj
+
+        if identity == "admin":
+            leader_id = request.data.get("leader")
+            leader_obj = user_obj.my_leader.get(id=leader_id)
+            owner_obj = user_obj
+
+        elif identity == "leader":
+            leader_obj = user_obj
+            owner_obj = user_obj.creator
+
+        else:
+            return Response({
+                "code": 401
+            })
+
+        operator_obj = WangtoOperator()
+        operator_obj.owner = owner_obj
+        operator_obj.creator = leader_obj
+        operator_obj.save()
+        # print(operator_obj)
+        serializer = my_serializer(WangtoOperator, operator_obj, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        # operator_obj.owner = owner_obj
+        # operator_obj.creator = leader_obj
+        # operator_obj.save()
+        UTC_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+        # TODO
+        for f in serializer.data:
+            print(serializer.data)
+            if "time" in f:
+                utcTime = sb.datetime.strptime(serializer.data[f], UTC_FORMAT)
+                localtime = utcTime + sb.timedelta(hours=8)
+                serializer.data[f] = localtime
+
+        return Response({
+            "code": 200,
+            "data": serializer.data
+        })
+
         # serializer = my_serializer(WangtoOperator, data={"nick_name": "hahaha"})
         # serializer.is_valid(raise_exception=True)
         # self.perform_create(serializer)
         # headers = self.get_success_headers(serializer.data)
         # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        return Response({"code": 123})
 
     @check_bg_authorization_token
     def update(self, request, *args, **kwargs):
