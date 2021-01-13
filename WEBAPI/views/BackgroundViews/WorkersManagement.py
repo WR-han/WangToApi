@@ -34,20 +34,20 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
         # 判断权限
         if identity == "admin":
             # 需要序列化的查询结果集
-            queryset = WangtoOperator.objects.filter(owner=user_obj)
+            queryset = WangtoOperator.objects.filter(admin=user_obj)
             # 筛选后的查询结果集_queryset参数必须是查询结果集)
             screen_queryset = self.filter_queryset(queryset)
             # 判断所需数据类型
             if data_category == "all":
                 # 子序列化器，用来对外键数据进行规范
-                creator_serializer = my_serializer(WangtoUser, field=["nick_name"], is_child=True)
+                leader_serializer = my_serializer(WangtoUser, field=["nick_name", "account", "id"], is_child=True)
                 # 分页后的查询结果集
                 page = self.paginate_queryset(screen_queryset)
                 # 设定序列化条件
                 serializer = my_serializer(WangtoOperator, many=True,
                                            field=["id", "nick_name", "account", "register_time", "expire_time",
                                                   "state"],
-                                           childs={"creator": (creator_serializer, False)})
+                                           childs={"leader": (leader_serializer, False)})
                 # 存在分页查询
                 if page is not None:
                     serializer.instance = page
@@ -73,11 +73,11 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
         if identity == "admin":
             leader_id = request.data.get("leader")
             leader_obj = user_obj.my_leader.get(id=leader_id)
-            owner_obj = user_obj
+            admin_obj = user_obj
 
         elif identity == "leader":
             leader_obj = user_obj
-            owner_obj = user_obj.creator
+            admin_obj = user_obj.admin
 
         else:
             return Response({
@@ -92,18 +92,19 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
             })
 
         operator_obj = WangtoOperator()
-        operator_obj.owner = owner_obj
-        operator_obj.creator = leader_obj
+        operator_obj.admin = admin_obj
+        operator_obj.leader = leader_obj
         operator_obj.save()
         serializer = my_serializer(WangtoOperator, operator_obj, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        creator_serializer = my_serializer(WangtoUser, field=["nick_name"], is_child=True)
-        serializer = my_serializer(WangtoOperator, operator_obj,
-                                   field=["id", "nick_name", "account", "register_time", "expire_time",
-                                          "state"],
-                                   childs={"creator": (creator_serializer, False)})
 
+        if request.GET.get("update_field"):
+            leader_serializer = my_serializer(WangtoUser, field=["nick_name", "account", "id"], is_child=True)
+            serializer = my_serializer(WangtoOperator, operator_obj,
+                                       field=["id", "nick_name", "account", "register_time", "expire_time",
+                                              "state"],
+                                       childs={"leader": (leader_serializer, False)})
         return Response({
             "code": 200,
             "data": serializer.data
@@ -111,16 +112,38 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
 
     @check_bg_authorization_token
     def update(self, request, *args, **kwargs):
+        # 权限
+        identity = request.identity
+        # 用户实例
+        user_obj = request.user_obj
+        operator_id = request.data.get("id")
 
-        instance = WangtoOperator.objects.get(id=1)
-        serializer = my_serializer(WangtoOperator, instance, data=request.data, partial=True)
+        if identity == "admin":
+            operator_obj = user_obj.my_operator.get(id=operator_id)
+            operator_qs = user_obj.my_operator.order_by("-leader")
+
+        elif identity == "leader":
+            operator_obj = user_obj.WangtoOperator.get(id=operator_id)
+            operator_qs = user_obj.WangtoOperator.order_by("-leader")
+        else:
+            return Response({
+                "code": 401
+            })
+
+        serializer = my_serializer(WangtoOperator, operator_obj, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        if getattr(instance, '_prefetched_objects_cache', None):
+        if getattr(operator_obj, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+            operator_obj._prefetched_objects_cache = {}
+
+        leader_serializer = my_serializer(WangtoUser, field=["nick_name", "account", "id"], is_child=True)
+        serializer = my_serializer(WangtoOperator, operator_qs, many=True,
+                                   field=["id", "nick_name", "account", "register_time", "expire_time",
+                                          "state"],
+                                   childs={"leader": (leader_serializer, False)})
 
         return Response(serializer.data)
 

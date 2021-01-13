@@ -23,8 +23,8 @@ class WangtoUser(models.Model):
     information = models.OneToOneField("WangtoUserInfo", on_delete=models.CASCADE, null=True, blank=True,
                                        verbose_name="其他信息")
 
-    creator = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="my_leader",
-                                verbose_name="创建者")
+    admin = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="my_leader",
+                              verbose_name="创建者")
     # team = models.ManyToManyField("WangtoTeam", verbose_name="相关团队", through="WangtoTeamAllocation",
     #                               related_name="WangtoUser")
 
@@ -67,19 +67,19 @@ class WangtoUserInfo(models.Model):
 #     allocation_time = models.DateTimeField("分配时间", auto_now_add=True)
 
 
-class WangtoTeam(models.Model):
-    """
-    团队表
-    """
-    team_name = models.CharField("团队名称", max_length=20)
-
-    creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者", related_name="my_team",
-                                null=True, blank=True)
-
-    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="负责人", related_name="WangtoTeam",
-                               null=True, blank=True)
-
-    register_time = models.DateTimeField("注册时间", auto_now_add=True)
+# class WangtoTeam(models.Model):
+#     """
+#     团队表
+#     """
+#     team_name = models.CharField("团队名称", max_length=20)
+# 
+#     creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者", related_name="my_team",
+#                                 null=True, blank=True)
+# 
+#     leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="负责人", related_name="WangtoTeam",
+#                                null=True, blank=True)
+# 
+#     register_time = models.DateTimeField("注册时间", auto_now_add=True)
 
 
 class WangtoInspector(models.Model):
@@ -95,9 +95,9 @@ class WangtoInspector(models.Model):
     account = models.CharField("手机号/登录账号", max_length=11)
     password = models.CharField("密码", max_length=64)
 
-    creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
-                                related_name="WangtoInspector", null=True, blank=True)
-    owner = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创拥有者",
+    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
+                               related_name="WangtoInspector", null=True, blank=True)
+    admin = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创拥有者",
                               related_name="my_inspector", null=True, blank=True)
     data = models.ManyToManyField("WangtoData", verbose_name="分配任务", through="WangtoDataAllocation",
                                   related_name="WangtoInspector")
@@ -124,9 +124,9 @@ class WangtoOperator(models.Model):
     account = models.CharField("手机号/登录账号", max_length=11)
     password = models.CharField("密码", max_length=64)
 
-    creator = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
-                                related_name="WangtoOperator", null=True, blank=True)
-    owner = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="拥有者",
+    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
+                               related_name="WangtoOperator", null=True, blank=True)
+    admin = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="拥有者",
                               related_name="my_operator", null=True, blank=True)
     data = models.ManyToManyField("WangtoData", verbose_name="分配任务", through="WangtoDataAllocation",
                                   related_name="WangtoOperator")
@@ -209,7 +209,7 @@ class WangtoPaymentRecords(models.Model):
     """
     缴费记录表
     """
-    owner = models.ForeignKey("WangtoUser", on_delete=models.CASCADE, related_name="WangtoPaymentRecords",
+    admin = models.ForeignKey("WangtoUser", on_delete=models.CASCADE, related_name="WangtoPaymentRecords", default="",
                               verbose_name="所有者")
 
 
