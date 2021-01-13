@@ -38,30 +38,41 @@ class Operator(ListAPIView, CreateAPIView, UpdateAPIView):
             # 筛选后的查询结果集_queryset参数必须是查询结果集)
             screen_queryset = self.filter_queryset(queryset)
             # 判断所需数据类型
-            if data_category == "all":
-                # 子序列化器，用来对外键数据进行规范
-                leader_serializer = my_serializer(WangtoUser, field=["nick_name", "account", "id"], is_child=True)
-                # 分页后的查询结果集
-                page = self.paginate_queryset(screen_queryset)
-                # 设定序列化条件
-                serializer = my_serializer(WangtoOperator, many=True,
-                                           field=["id", "nick_name", "account", "register_time", "expire_time",
-                                                  "state"],
-                                           childs={"leader": (leader_serializer, False)})
-                # 存在分页查询
-                if page is not None:
-                    serializer.instance = page
-                    return self.get_paginated_response(serializer)
-                return Response({
-                    "code": 403,
-                    "data": "必须携带分页数量参数"
-                })
-            elif data_category == "drop":
-                serializer = my_serializer(WangtoOperator, screen_queryset, many=True, excludes=("id", "state"))
-                return Response({
-                    "code": 200,
-                    "data": serializer.data
-                })
+        elif identity == "leader":
+            # 需要序列化的查询结果集
+            queryset = WangtoOperator.objects.filter(leader=user_obj)
+            # 筛选后的查询结果集_queryset参数必须是查询结果集)
+            screen_queryset = self.filter_queryset(queryset)
+            # 判断所需数据类型
+        else:
+            return Response({
+                "code": 401
+            })
+
+        if data_category == "all":
+            # 子序列化器，用来对外键数据进行规范
+            leader_serializer = my_serializer(WangtoUser, field=["nick_name", "account", "id"], is_child=True)
+            # 分页后的查询结果集
+            page = self.paginate_queryset(screen_queryset)
+            # 设定序列化条件
+            serializer = my_serializer(WangtoOperator, many=True,
+                                       field=["id", "nick_name", "account", "register_time", "expire_time",
+                                              "state"],
+                                       childs={"leader": (leader_serializer, False)})
+            # 存在分页查询
+            if page is not None:
+                serializer.instance = page
+                return self.get_paginated_response(serializer)
+            return Response({
+                "code": 403,
+                "data": "必须携带分页数量参数"
+            })
+        elif data_category == "drop":
+            serializer = my_serializer(WangtoOperator, screen_queryset, many=True, excludes=("id", "state"))
+            return Response({
+                "code": 200,
+                "data": serializer.data
+            })
 
     @check_bg_authorization_token
     def create(self, request, *args, **kwargs):
@@ -176,29 +187,37 @@ class Leader(ListAPIView, CreateAPIView, UpdateAPIView):
             queryset = user_obj.my_leader.all()
             # 筛选后的查询结果集_queryset参数必须是查询结果集)
             screen_queryset = self.filter_queryset(queryset)
-            # 判断所需数据类型
-            if data_category == "all":
-                pass
-                # # 子序列化器，用来对外键数据进行规范
-                # creator_serializer = my_serializer(WangtoUser, field=("nick_name",), is_child=True)
-                # # 分页后的查询结果集
-                # page = self.paginate_queryset(screen_queryset)
-                # # 设定序列化条件
-                # serializer = my_serializer(WangtoOperator, many=True,
-                #                            field=["id", "nick_name", "account", "register_time", "expire_time",
-                #                                   "state"],
-                #                            childs={"creator": (creator_serializer, False)})
-                # # 存在分页查询
-                # if page is not None:
-                #     serializer.instance = page
-                #     return self.get_paginated_response(serializer)
-                # return Response({
-                #     "code": 403,
-                #     "data": "必须携带分页数量参数"
-                # })
-            elif data_category == "drop":
-                serializer = my_serializer(WangtoUser, screen_queryset, many=True, field=["nick_name", "account", "id"])
-                return Response({
-                    "code": 200,
-                    "data": serializer.data
-                })
+
+        elif identity == "leader":
+            # 筛选后的查询结果集_queryset参数必须是查询结果集)
+            screen_queryset = [user_obj]
+        else:
+            return Response({
+                "code": 401
+            })
+        # 判断所需数据类型
+        if data_category == "all":
+            pass
+            # # 子序列化器，用来对外键数据进行规范
+            # creator_serializer = my_serializer(WangtoUser, field=("nick_name",), is_child=True)
+            # # 分页后的查询结果集
+            # page = self.paginate_queryset(screen_queryset)
+            # # 设定序列化条件
+            # serializer = my_serializer(WangtoOperator, many=True,
+            #                            field=["id", "nick_name", "account", "register_time", "expire_time",
+            #                                   "state"],
+            #                            childs={"creator": (creator_serializer, False)})
+            # # 存在分页查询
+            # if page is not None:
+            #     serializer.instance = page
+            #     return self.get_paginated_response(serializer)
+            # return Response({
+            #     "code": 403,
+            #     "data": "必须携带分页数量参数"
+            # })
+        elif data_category == "drop":
+            serializer = my_serializer(WangtoUser, screen_queryset, many=True, field=["nick_name", "account", "id"])
+            return Response({
+                "code": 200,
+                "data": serializer.data
+            })

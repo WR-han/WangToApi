@@ -39,7 +39,8 @@ class Login(APIView):
                 token = make_bg_authorization_token(wangto_user_id=account_obj.pk)
                 return Response({
                     "code": 200,
-                    "token": token
+                    "token": token,
+                    "identity": account_obj.identity
                 })
 
             else:

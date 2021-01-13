@@ -95,7 +95,7 @@ class WangtoInspector(models.Model):
     account = models.CharField("手机号/登录账号", max_length=11)
     password = models.CharField("密码", max_length=64)
 
-    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
+    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="管理员",
                                related_name="WangtoInspector", null=True, blank=True)
     admin = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创拥有者",
                               related_name="my_inspector", null=True, blank=True)
@@ -124,7 +124,7 @@ class WangtoOperator(models.Model):
     account = models.CharField("手机号/登录账号", max_length=11)
     password = models.CharField("密码", max_length=64)
 
-    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="创建者",
+    leader = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="管理员",
                                related_name="WangtoOperator", null=True, blank=True)
     admin = models.ForeignKey("WangtoUser", on_delete=models.SET_NULL, verbose_name="拥有者",
                               related_name="my_operator", null=True, blank=True)
