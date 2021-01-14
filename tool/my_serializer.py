@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from tool.others import get_model_field, create_password
-from tool.authorization_token import make_bg_authorization_token
 
 
 def my_serializer(_model=None, instance=None, many=False, data=None, field=None, _depth=None, allow=(), excludes=(),
@@ -108,5 +107,6 @@ def my_serializer(_model=None, instance=None, many=False, data=None, field=None,
             field_header = get_model_field(_model, need_field, childs.keys())
         else:
             field_header = get_model_field(_model, need_field, [])
+            # print(field_header)
         setattr(ser, "field_header", field_header)
         return ser
